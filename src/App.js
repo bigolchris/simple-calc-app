@@ -1,6 +1,7 @@
 import "./styles.css";
 import { useReducer } from "react";
 import DigitButton from "./digitButton";
+import OperationButton from "./OperationButton";
 
 export const ACTIONS = {
   ADD_DIGITS: "add_digits",
@@ -13,13 +14,52 @@ export const ACTIONS = {
 function reducer(state, { type, payload }) {
   switch (type) {
     case ACTIONS.ADD_DIGITS:
+      if (payload.digit === "0" && state.currentOperand === "0") {
+        return state;
+      }
+      if (payload.digit === "." && state.currentOperand.includes(".")) {
+        return state;
+      }
       return {
         ...state,
         currentOperand: `${state.currentOperand || ""}${payload.digit}`,
       };
+    case ACTIONS.CHOOSE_OPERATION:
+      if (state.currentOperand == null && state.previousOperand == null) {
+        return state;
+      }
+      if (state.previousOperand == null) {
+        return {
+          ...state,
+          operation: payload.operation,
+          previousOperand: state.currentOperand,
+          currentOperand: null,
+        };
+      }
+
+      return {
+        ...state,
+        previousOperand: evalute(state),
+        operation: payload.operation,
+        currentOperand: null,
+      };
+    case ACTIONS.CLEAR:
+      return {};
   }
 }
 
+function evalute({ currentOperand, previousOperand, operation }) {
+  const previous = parseFloat(previousOperand);
+  const current = parseFloat(currentOperand);
+  if (isNaN(current) || isNaN(previous)) return "";
+
+  let computation = "";
+  switch (operation) {
+    case "+":
+      computation = previous + current;
+      break;
+  }
+}
 function App() {
   const [{ currentOperand, previousOperand, operation }, dispatch] = useReducer(
     reducer,
@@ -35,7 +75,12 @@ function App() {
         </div>
         <div className="current-operand">{currentOperand}</div>
       </div>
-      <button className="span-two">AC</button>
+      <button
+        className="span-two"
+        onClick={() => dispatch({ type: ACTIONS.CLEAR })}
+      >
+        AC
+      </button>
       <button>DEL</button>
       <OperationButton operation="÷" dispatch={dispatch} />
 
